@@ -1,11 +1,12 @@
 # Movie Industry Analysis
 
-#Import Libraries
+# Import Libraries
 import os
 from pathlib import Path
 
 import pandas as pd
 import numpy as np
+import sqlite3
 
 # File Paths
 raw = r"C:\Users\bongo\OneDrive\Desktop\GitHub\Movie Analysis\Data\Raw\movies.csv\movies.csv"
@@ -95,3 +96,77 @@ quality_report = pd.DataFrame({
 })
 
 print(quality_report)
+
+
+# SQLite Database
+DATABASE_FOLDER = r"C:\Users\bongo\OneDrive\Desktop\GitHub\Movie Analysis\Database"
+
+os.makedirs(DATABASE_FOLDER, exist_ok=True)
+
+database_path = os.path.join(DATABASE_FOLDER, "movie_industry.db")
+
+connection = sqlite3.connect(database_path)
+
+print("\nSQLite database created successfully.")
+
+# Load clean dataset into SQLite
+movies.to_sql(
+    name="movies",
+    con=connection,
+    if_exists="replace",
+    index=False
+)
+
+print("Clean dataset successfully loaded into SQLite.")
+
+cursor = connection.cursor()
+
+
+#Verify Row Count in the Database
+cursor.execute("""
+SELECT COUNT(*)
+FROM movies;
+""")
+
+row_count = cursor.fetchone()[0]
+
+print(f"\nRows loaded into SQLite: {row_count:,}")
+
+#Verify the number of columns in the database
+cursor.execute("""
+PRAGMA table_info(movies);
+""")
+
+columns = cursor.fetchall()
+
+print(f"Columns in database: {len(columns)}")
+
+#Display Column Names
+print("\nDatabase Columns")
+
+for column in columns:
+    print(column[1])
+
+#Test Query 1
+print("\nFirst Five Movies")
+
+query = """
+SELECT *
+FROM movies
+LIMIT 5;
+"""
+
+print(pd.read_sql(query, connection))
+
+#Test Query 2
+query = """
+SELECT
+    COUNT(*) AS TotalMovies,
+    AVG(gross) AS AverageRevenue,
+    MAX(gross) AS HighestRevenue
+FROM movies;
+"""
+
+print("\nSummary Statistics")
+
+print(pd.read_sql(query, connection))
