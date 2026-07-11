@@ -31,6 +31,39 @@ print("\nData successfully loaded into a pandas DataFrame.")
 
 clean_file = os.path.join(clean, "cleaned_movies.csv")
 
+
+# FEATURE ENGINEERING
+# Profit
+movies["profit"] = movies["gross"] - movies["budget"]
+
+# ROI
+movies["ROI"] = (movies["gross"] - movies["budget"]) / movies["budget"]
+
+# Release Date
+# Remove country information in brackets
+movies["released"] = movies["released"].str.replace(r"\s*\(.*\)", "", regex=True)
+
+# Convert to datetime
+movies["released"] = pd.to_datetime(
+    movies["released"],
+    errors="coerce"
+)
+
+movies["release_month"] = movies["released"].dt.month_name()
+
+movies["release_quarter"] = movies["released"].dt.quarter
+
+movies["decade"] = (movies["year"] // 10) * 10
+
+# Release Month
+movies["release_month"] = movies["released"].dt.month_name()
+
+# Release Quarter
+movies["release_quarter"] = movies["released"].dt.quarter
+
+# Decade
+movies["decade"] = (movies["year"] // 10) * 10
+
 movies.to_csv(clean_file, index=False)
 
 print("\nClean data saved successfully to:", clean_file)
@@ -114,7 +147,7 @@ movies.to_sql(
     name="movies",
     con=connection,
     if_exists="replace",
-    index=False
+    index="replace"
 )
 
 print("Clean dataset successfully loaded into SQLite.")
@@ -170,3 +203,8 @@ FROM movies;
 print("\nSummary Statistics")
 
 print(pd.read_sql(query, connection))
+
+#Close Database Connection
+connection.close()
+
+print("\nDatabase connection closed.")
